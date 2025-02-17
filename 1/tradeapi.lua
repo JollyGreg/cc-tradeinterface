@@ -59,7 +59,7 @@ print(tradeTable[1])
 for i = 1, #perilist do
     debug.write("type "..peripheral.getType(perilist[i]).." address "..perilist[i].."\n")
 
-    if peripheral.getType(perilist[i]) then hello
+    if peripheral.getType(perilist[i]) then
         local interface = peripheral.wrap(perilist[i])
         table.insert(tradeTable, peripheral.wrap(perilist[i]))
         local success, trades = peripheral.getTrades(interface)
