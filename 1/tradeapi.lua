@@ -14,67 +14,153 @@ function dump(o)
     end
 end
 
-function refactTradeStruct(t, num)
-    local function subtable(t)
-        for i, v in pairs(t) do
-            if not (type(i)=="table") then debug.write(i.."\n") else subtable(i) end
-            if not (type(v)=="table") then debug.write(v.."\n") else subtable(v) end
+-- itemname enchant count - costAname enchant count - costBname enchant count
+local function tradeScan(peripheral)
+    local success, trades = peripheral.getTrades()
+    local output = {}
+
+    local function tradeunpack(trade)
+        local description = ""
+        for resultOrCost, item in pairs(trade) do
+
+            for itemname, details in pairs(item) do
+                description = description .. itemname .. " "
+
+                for enchantsOrCount, value in pairs(details) do
+
+                    if type(value) == "table" then
+                        for enchant, level in pairs(value) do
+                            description = description .. enchant .. " " .. level .. " "
+                        end
+                         -- means that the count isn't added to the description
+                    else
+                        description = description .. value .. " "
+                    end    
+                end         
+                description = description .. ","
+            end
         end
+        return description
     end
-    subtable(t)
+    
+    if success==true then 
+        for index, trade in pairs(trades) do
+            table.insert(output, {index = index, description = tradeunpack(trade)})
+        end
+    else
+        return false
+    end
+    return output
 end
 
-function addTrades(t)
+local function trytrade(tradeindex)
+    local interface = peripheral.wrap("right")
+    local storage = peripheral.wrap("bottom")
+
+    if interface.trade("bottom", "bottom", tradeindex.index) == true then
+       return true
+    end
+    return false
 end
--- iterate over peripherals to find trade interfaces
-local perilist = peripheral.getNames()
---[[ 
-{ 
-    {
-    address, trades { 
-    {result, count, {enchants}, 
-    costA, count, {enchants}, 
-    costB, count, {enchants}},
 
-    {result, count, {enchants}, 
-    costA, count, {enchants}, 
-    costB, count, {enchants}}}
-    }
+local function tradescreen(trades)
+    local w, h = term.getSize()
+    local scrollindex = 0
 
-    {
-    wrap, trades { 
-    {result, count, {enchants}, 
-    costA, count, {enchants}, 
-    costB, count, {enchants}},
+    local function unpackcomma(descr)
+        local output = ""
+        local index = 0
+        for str in string.gmatch(descr, "([^,]+)") do
+            if index == 1 then
+                output = str.."-"..output
+            else
+               output = output.."## "..str.."-" 
+            end
+            index = index + 1
+        end
+        return output
+    end
 
-    {result, count, {enchants}, 
-    costA, count, {enchants}, 
-    costB, count, {enchants}}}
-    }
-}
-]]--
-local tradeTable = {peripheral.wrap("right"), { {"iron_leggings", 1, {}, "emeralds", 7, {}, "air", 0, {}}, {"iron_boots", 1, {}, "emeralds", 4, {}, "air", 0} } }
-print(tradeTable[1])
+    local function unpackspace(descr)
+        local output = {}
+        for str in string.gmatch(descr, "([^-]+)") do
+            table.insert(output, str)
+        end
+        return output
+    end
 
-for i = 1, #perilist do
-    debug.write("type "..peripheral.getType(perilist[i]).." address "..perilist[i].."\n")
 
-    if peripheral.getType(perilist[i]) then
-        local interface = peripheral.wrap(perilist[i])
-        table.insert(tradeTable, peripheral.wrap(perilist[i]))
-        local success, trades = peripheral.getTrades(interface)
+    -- initial presentation of ores found
+    local function presentTrades(scrollindex)
+        local offset = scrollindex
+        local tradeindex = {}
+        term.clear() 
 
-        if success==true then 
-            debug.write("\n--Trades--\n")
-            refactTradeStruct(trades)
-            debug.write(dump(trades))
-            print(trades[1]["costA"][1])
-            interface.cycleTrades()
+        -- writes title
+        term.setCursorPos(1, 1) 
+        term.write("Trade Computer Main")
+        
+        -- adds one line of space between titles/heading and the list for readability
+        local _, oldy = term.getCursorPos()
+        term.setCursorPos(1, oldy+1)
+
+        -- writes arrow if necessary
+        if (offset > 0) then 
+            local _, oldy = term.getCursorPos()
+            term.setCursorPos(w/2, oldy+1) 
+            term.write("/\\") 
         end
         
-        table.insert(tradeTable, peripheral.wrap(perilist[i]))
+        for i, trade in pairs(trades) do
+            if offset > 0 then
+                offset = offset - 1
+            else
+                _, oldy = term.getCursorPos()
+                if (oldy == h-1) then -- if cursor is at bottom of screen
+                    term.setCursorPos(w/2, oldy+1) term.write("\\/")
+                else
+                    local desc = unpackcomma(trade.description)
+                    for _, line in pairs(unpackspace(desc)) do
+                        local _, oldy = term.getCursorPos()
+                        term.setCursorPos(1, oldy+1) term.clearLine()
+                        term.write(line)
+                        table.insert(tradeindex, {termindex = oldy+1, index = trade.index})
+                    end
+                end
+            end
+        end
+
+        return tradeindex
+    end
+    local tradeindex = presentTrades(scrollindex)
+    
+    -- user input begins
+    while true do
+        local _, _, _, y = os.pullEvent("mouse_click")
+        
+        -- scroll down
+        if y == h then
+            scrollindex = scrollindex + 3
+            presentTrades(scrollindex)
+        -- scroll up
+        elseif y == 4 then
+            scrollindex = scrollindex - 3
+            presentTrades(scrollindex)
+
+        -- check if trade requested
+        elseif y < h and y > 4 then
+            for _, line in pairs(tradeindex) do
+                if line.termindex == y then
+                    trytrade(line)
+                end
+            end
+        end
     end
 end
--- pack trade info into data structure
--- display data structures
+
+local function main()
+    local trades = tradeScan(peripheral.wrap("right"))
+    tradescreen(trades)
+end
+main()
 debug.close()
