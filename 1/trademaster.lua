@@ -15,8 +15,9 @@ function dump(o)
 end
 
 -- itemname enchant count - costAname enchant count - costBname enchant count
-local function tradeScan(peripheral)
-    local success, trades = peripheral.getTrades()
+local function tradeScan(peripheralname)
+    local interface = peripheral.wrap(peripheralname)
+    local success, trades = interface.getTrades()
     local output = {}
 
     local function tradeunpack(trade)
@@ -45,11 +46,10 @@ local function tradeScan(peripheral)
     
     if success==true then 
         for index, trade in pairs(trades) do
-            table.insert(output, {index = index, description = tradeunpack(trade)})
+            table.insert(output, {index = index, description = tradeunpack(trade), interface = peripheralname})
         end
-    else
-        return false
     end
+
     return output
 end
 
@@ -159,8 +159,16 @@ local function tradescreen(trades)
 end
 
 local function main()
-    local trades = tradeScan(peripheral.wrap("right"))
-    tradescreen(trades)
+    local trades = {}
+    local peripherals = peripheral.getNames()
+    for _, peripheral_ in pairs(peripherals) do
+        if peripheral.hasType(peripheral_, "trading_interface") then
+            print(peripheral_)
+            
+            local id = multishell.launch({}, "/tradeinterface.lua", peripheral_)
+            multishell.setTitle(id, peripheral_)
+        end
+    end
 end
 main()
 debug.close()
