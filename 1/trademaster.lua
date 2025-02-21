@@ -12,3 +12,10 @@ local function main()
     end
 end
 main()
+
+--[[ things to add
+- auto trading
+- cycle trades until wanted trade
+- ui changes when trade available
+- restock trades at will
+]]--
