@@ -1,8 +1,7 @@
 local args = {...}
-
-local function tradeScan(peripheralname)
-    local interface = peripheral.wrap(peripheralname)
-    local success, trades = interface.getTrades()
+-- change this whole code to use peripheral.call instead of wrapping
+local function tradeScan()
+    local success, trades = peripheral.call(args[1], "getTrades")
     local output = {}
 
     local function tradeunpack(trade)
@@ -39,12 +38,13 @@ local function tradeScan(peripheralname)
 end
 
 local function trytrade(tradeindex)
-    local interface = peripheral.wrap("right")
     local storage = peripheral.wrap("bottom")
 
-    if interface.trade("bottom", "bottom", tradeindex.index) == true then
+    if peripheral.call(args[1], "trade", "bottom", "bottom", tradeindex.index) == true then
+        print("success")
        return true
     end
+    print("failure")
     return false
 end
 
@@ -144,7 +144,8 @@ local function tradescreen(trades)
 end
 
 local function main()
-    local trades = tradeScan(args[1])
+    print(args[1])
+    local trades = tradeScan()
     tradescreen(trades)
 end
 main()
