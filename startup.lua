@@ -7,6 +7,8 @@
 
 local function main()
     term.clear()
+    term.setCursorPos(1, 1)
+
     local trades = {}
     local peripherals = peripheral.getNames()
 
