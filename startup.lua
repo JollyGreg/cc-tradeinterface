@@ -1,5 +1,12 @@
---debugging using fs.write
+--[[ things to add
+- auto trading
+- cycle trades until wanted trade
+- ui changes when trade available
+- restock trades at will
+]]--
+
 local function main()
+    term.clear()
     local trades = {}
     local peripherals = peripheral.getNames()
 
@@ -24,10 +31,3 @@ local function main()
 
 end
 main()
-
---[[ things to add
-- auto trading
-- cycle trades until wanted trade
-- ui changes when trade available
-- restock trades at will
-]]--
