@@ -85,9 +85,10 @@ while tradesScanned == true do
     -- termLibrary title and headings
     table.insert(buttonIndex, tlib.Title({text = "Trade Computer Main", button = "title"}, 1))
     table.insert(buttonIndex, tlib.Heading({text = "<< click to cycle trades >>", button = "cycle"}, 2))
+    table.insert(buttonIndex, tlib.Heading({text = "<< click to cycle restock >>", button = "restock"}, 3))
 
     -- termLibrary list
-    for _, button in pairs(tlib.ScrollableList(trades, 2, h, scroll, 3)) do
+    for _, button in pairs(tlib.ScrollableList(trades, 3, h, scroll, 3)) do
         table.insert(buttonIndex, button)
     end
 
@@ -102,6 +103,9 @@ while tradesScanned == true do
             elseif line.button == "cycle" then
                 peripheral.call(interface, "cycleTrades")
                 tradesScanned = false
+
+            elseif line.button == "restock" then
+                peripheral.call(interface, "restock")
 
             elseif type(line.button) == "number" then
                 tradeFeedback( trytrade(line.button, interface, storage), line )
